@@ -145,6 +145,7 @@ st.divider()
 # --------------------------------------------------
 if st.button("🔘 Check Loan Eligibility (Stacking Model)"):
 
+    # ---------- Prediction logic (unchanged) ----------
     user_input = np.array([
         app_income,
         co_income,
@@ -154,7 +155,11 @@ if st.button("🔘 Check Loan Eligibility (Stacking Model)"):
         self_emp_val
     ]).reshape(1, -1)
 
-    padded = np.hstack([user_input, np.zeros((1, X_train.shape[1] - user_input.shape[1]))])
+    padded = np.hstack([
+        user_input,
+        np.zeros((1, X_train.shape[1] - user_input.shape[1]))
+    ])
+
     user_scaled = scaler.transform(padded)
 
     lr_pred = lr.predict(user_scaled)[0]
@@ -164,6 +169,40 @@ if st.button("🔘 Check Loan Eligibility (Stacking Model)"):
     meta_input = np.array([[lr_pred, dt_pred, rf_pred]])
     final_pred = meta_model.predict(meta_input)[0]
     confidence = meta_model.predict_proba(meta_input)[0][final_pred] * 100
+
+    st.divider()
+
+    # ---------- MAIN RESULT ----------
+    if final_pred == 1:
+        st.success("✅ Loan Approved")
+    else:
+        st.error("❌ Loan Rejected")
+
+    # ---------- BASE MODEL RESULTS ----------
+    st.subheader("📊 Base Model Predictions")
+    st.write(f"Logistic Regression → {'Approved' if lr_pred else 'Rejected'}")
+    st.write(f"Decision Tree → {'Approved' if dt_pred else 'Rejected'}")
+    st.write(f"Random Forest → {'Approved' if rf_pred else 'Rejected'}")
+
+    # ---------- CONFIDENCE ----------
+    st.subheader("📈 Confidence Score")
+    st.progress(int(confidence))
+    st.write(f"Model Confidence: **{confidence:.2f}%**")
+
+    # ---------- BUSINESS EXPLANATION ----------
+    st.subheader("🧠 Business Explanation")
+    st.info(
+        f"""
+        Based on the applicant's income, credit history, employment status,
+        and combined predictions from multiple models,
+        the applicant is **{'likely' if final_pred else 'unlikely'}**
+        to repay the loan.
+
+        Therefore, the stacking model recommends
+        **loan {'approval' if final_pred else 'rejection'}**.
+        """
+    )
+
 
     # --------------------------------------------------
     # 5️⃣ OUTPUT SECTION (DYNAMIC COLORS)
