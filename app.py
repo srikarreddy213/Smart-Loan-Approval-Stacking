@@ -28,7 +28,7 @@ st.divider()
 # ---------------------------------------------------
 # Load & Prepare Dataset
 # ---------------------------------------------------
-df = pd.read_csv("/content/drive/MyDrive/Colab Notebooks/train_u6lujuX_CVtuZ9i.csv")
+df = pd.read_csv("data/train_u6lujuX_CVtuZ9i.csv")
 
 # Target encoding
 y = df["Loan_Status"].map({"Y": 1, "N": 0})
