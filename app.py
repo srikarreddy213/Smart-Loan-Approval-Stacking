@@ -9,55 +9,58 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 # --------------------------------------------------
-# 🌸 SOFT, EYE-PLEASING THEME (PASTEL)
+# PAGE CONFIG (IMPORTANT: FIRST LINE)
 # --------------------------------------------------
-st.set_page_config(page_title="Smart Loan Approval", layout="wide")
+st.set_page_config(
+    page_title="Smart Loan Approval",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# --------------------------------------------------
+# SOFT, EYE-PLEASING THEME (NO DARK / NO FINTECH)
+# --------------------------------------------------
 st.markdown("""
 <style>
 .stApp {
-    background-color: #f8fafc;
-}
-
-h1, h2, h3 {
-    color: #334155;
+    background-color: #f9fafb;
 }
 
 section[data-testid="stSidebar"] {
-    background-color: #f1f5f9;
+    background-color: #eef2f7;
 }
 
-.stButton>button {
-    background-color: #6366f1;
-    color: white;
-    border-radius: 10px;
-    padding: 0.6em 1.2em;
-    font-weight: 600;
-    border: none;
-}
-.stButton>button:hover {
-    background-color: #4f46e5;
+h1, h2, h3, h4 {
+    color: #1f2937;
 }
 
-.card {
-    padding: 18px;
-    border-radius: 14px;
-    margin-top: 10px;
+.result-card {
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 16px;
+}
+
+.success {
+    background-color: #ecfdf5;
+    border-left: 6px solid #22c55e;
+}
+
+.error {
+    background-color: #fef2f2;
+    border-left: 6px solid #ef4444;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------
-# 1️⃣ TITLE & DESCRIPTION
+# TITLE & DESCRIPTION
 # --------------------------------------------------
 st.title("🎯 Smart Loan Approval System – Stacking Model")
 st.write(
-    "This system uses a **Stacking Ensemble Machine Learning model** to predict "
-    "whether a loan will be **approved or rejected** by combining multiple models "
+    "This application predicts **loan approval or rejection** using a "
+    "**Stacking Ensemble Machine Learning model** that combines multiple models "
     "for better decision making."
 )
-
-st.divider()
 
 # --------------------------------------------------
 # LOAD DATA (FROM REPO)
@@ -67,6 +70,7 @@ df = pd.read_csv("data/train_u6lujuX_CVtuZ9i.csv")
 y = df["Loan_Status"].map({"Y": 1, "N": 0})
 X = df.drop(["Loan_ID", "Loan_Status"], axis=1)
 
+# Preprocessing
 X["Dependents"] = X["Dependents"].fillna(X["Dependents"].mode()[0])
 X["Dependents"] = X["Dependents"].replace("3+", 3).astype(int)
 
@@ -109,9 +113,9 @@ meta_model = LogisticRegression()
 meta_model.fit(meta_train, y_train)
 
 # --------------------------------------------------
-# 2️⃣ INPUT SECTION (SIDEBAR)
+# SIDEBAR INPUTS
 # --------------------------------------------------
-st.sidebar.header("📋 Applicant Details")
+st.sidebar.header("Applicant Details")
 
 app_income = st.sidebar.number_input("Applicant Income", min_value=0)
 co_income = st.sidebar.number_input("Co-Applicant Income", min_value=0)
@@ -126,26 +130,24 @@ credit_val = 1 if credit == "Yes" else 0
 self_emp_val = 1 if employment == "Self-Employed" else 0
 
 # --------------------------------------------------
-# 3️⃣ MODEL ARCHITECTURE DISPLAY
+# MODEL ARCHITECTURE (CLEAN)
 # --------------------------------------------------
-st.subheader("🧠 Stacking Architecture")
-st.markdown("""
-- **Base Models**
-  - Logistic Regression
-  - Decision Tree
-  - Random Forest  
-- **Meta Model**
-  - Logistic Regression
+st.subheader("Model Architecture")
+st.write("""
+**Base Models**
+- Logistic Regression  
+- Decision Tree  
+- Random Forest  
+
+**Meta Model**
+- Logistic Regression
 """)
 
-st.divider()
-
 # --------------------------------------------------
-# 4️⃣ PREDICTION
+# PREDICTION BUTTON & OUTPUT
 # --------------------------------------------------
-if st.button("🔘 Check Loan Eligibility (Stacking Model)"):
+if st.button("Check Loan Eligibility (Stacking Model)"):
 
-    # ---------- Prediction logic (unchanged) ----------
     user_input = np.array([
         app_income,
         co_income,
@@ -170,85 +172,31 @@ if st.button("🔘 Check Loan Eligibility (Stacking Model)"):
     final_pred = meta_model.predict(meta_input)[0]
     confidence = meta_model.predict_proba(meta_input)[0][final_pred] * 100
 
-    st.divider()
-
-    # ---------- MAIN RESULT ----------
+    # ---------------- RESULT ----------------
     if final_pred == 1:
-        st.success("✅ Loan Approved")
+        st.markdown(
+            "<div class='result-card success'><h3>✅ Loan Approved</h3></div>",
+            unsafe_allow_html=True
+        )
     else:
-        st.error("❌ Loan Rejected")
+        st.markdown(
+            "<div class='result-card error'><h3>❌ Loan Rejected</h3></div>",
+            unsafe_allow_html=True
+        )
 
-    # ---------- BASE MODEL RESULTS ----------
-    st.subheader("📊 Base Model Predictions")
-    st.write(f"Logistic Regression → {'Approved' if lr_pred else 'Rejected'}")
-    st.write(f"Decision Tree → {'Approved' if dt_pred else 'Rejected'}")
-    st.write(f"Random Forest → {'Approved' if rf_pred else 'Rejected'}")
+    # ---------------- DETAILS ----------------
+    st.subheader("Base Model Predictions")
+    st.write(f"Logistic Regression: {'Approved' if lr_pred else 'Rejected'}")
+    st.write(f"Decision Tree: {'Approved' if dt_pred else 'Rejected'}")
+    st.write(f"Random Forest: {'Approved' if rf_pred else 'Rejected'}")
 
-    # ---------- CONFIDENCE ----------
-    st.subheader("📈 Confidence Score")
+    st.subheader("Confidence Score")
     st.progress(int(confidence))
-    st.write(f"Model Confidence: **{confidence:.2f}%**")
+    st.write(f"{confidence:.2f}% confidence")
 
-    # ---------- BUSINESS EXPLANATION ----------
-    st.subheader("🧠 Business Explanation")
+    st.subheader("Business Explanation")
     st.info(
-        f"""
-        Based on the applicant's income, credit history, employment status,
-        and combined predictions from multiple models,
-        the applicant is **{'likely' if final_pred else 'unlikely'}**
-        to repay the loan.
-
-        Therefore, the stacking model recommends
-        **loan {'approval' if final_pred else 'rejection'}**.
-        """
-    )
-
-
-    # --------------------------------------------------
-    # 5️⃣ OUTPUT SECTION (DYNAMIC COLORS)
-    # --------------------------------------------------
-    if final_pred == 1:
-        bg = "#ecfdf5"
-        border = "#22c55e"
-        text = "✅ Loan Approved"
-        color = "#15803d"
-    else:
-        bg = "#fef2f2"
-        border = "#ef4444"
-        text = "❌ Loan Rejected"
-        color = "#b91c1c"
-
-    st.markdown(
-        f"""
-        <div class="card" style="background:{bg}; border-left:6px solid {border};">
-            <h2 style="color:{color};">{text}</h2>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.subheader("📊 Base Model Predictions")
-    st.write(f"• Logistic Regression → {'Approved' if lr_pred else 'Rejected'}")
-    st.write(f"• Decision Tree → {'Approved' if dt_pred else 'Rejected'}")
-    st.write(f"• Random Forest → {'Approved' if rf_pred else 'Rejected'}")
-
-    st.subheader("📈 Confidence")
-    st.progress(int(confidence))
-    st.write(f"Model Confidence: **{confidence:.2f}%**")
-
-    # --------------------------------------------------
-    # 6️⃣ BUSINESS EXPLANATION
-    # --------------------------------------------------
-    st.markdown(
-        f"""
-        <div class="card" style="background:#f1f5f9; border-left:5px solid #6366f1;">
-        Based on applicant income, credit history, employment status, and
-        combined predictions from multiple models, the applicant is
-        <b>{"likely" if final_pred else "unlikely"}</b> to repay the loan.
-        <br><br>
-        Therefore, the stacking model recommends
-        <b>{"loan approval" if final_pred else "loan rejection"}</b>.
-        </div>
-        """,
-        unsafe_allow_html=True
+        f"The applicant is **{'likely' if final_pred else 'unlikely'}** to repay the loan "
+        f"based on income, credit history, and combined predictions from multiple models. "
+        f"The stacking model therefore recommends **{'approval' if final_pred else 'rejection'}**."
     )
